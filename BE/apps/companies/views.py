@@ -8,7 +8,7 @@ from .models import Branch, Company
 class CompanySer(serializers.ModelSerializer):
     class Meta:
         model = Company
-        fields = ["id", "name", "gstin", "pan", "address", "phone", "gst_rate", "hallmark_charge"]
+        fields = ["id", "name", "gstin", "pan", "address", "phone", "gst_rate", "hallmark_charge", "hsn_code", "state"]
 
 
 class BranchSer(serializers.ModelSerializer):

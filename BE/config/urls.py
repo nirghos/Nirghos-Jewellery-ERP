@@ -13,6 +13,18 @@ api = [
     path("", include("apps.products.urls")),
     path("", include("apps.sales.urls")),
     path("", include("apps.dashboard.urls")),
+    path("", include("apps.accounting.urls")),
+    path("", include("apps.purchases.urls")),
+    path("", include("apps.old_gold.urls")),
+    path("", include("apps.karigars.urls")),
+    path("", include("apps.manufacturing.urls")),
+    path("", include("apps.repairs.urls")),
+    path("", include("apps.diamonds.urls")),
+    path("", include("apps.hallmark.urls")),
+    path("", include("apps.schemes.urls")),
+    path("", include("apps.hr.urls")),
+    path("", include("apps.gst.urls")),
+    path("", include("apps.reports.urls")),
 ]
 urlpatterns = [
     path("admin/", admin.site.urls),

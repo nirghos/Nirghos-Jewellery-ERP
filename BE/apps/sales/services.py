@@ -5,7 +5,9 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.accounting import services as acc
 from apps.core import jewellery as J
+from apps.core.models import next_number
 from apps.products.models import MetalRate, Product, StockMovement
 from .models import Invoice, InvoiceItem, Payment
 
@@ -13,8 +15,7 @@ D = Decimal
 
 
 def _next_number(company):
-    n = Invoice.objects.filter(company=company).count() + 1
-    return f"INV-{timezone.now():%y%m}-{n:05d}"
+    return next_number(company, "inv", "INV")
 
 
 def _rate_for(company, product):
@@ -26,7 +27,8 @@ def _rate_for(company, product):
 
 
 @transaction.atomic
-def create_invoice(*, user, branch, customer, product_ids, payments, discount=0, old_gold_adjustment=0, include_hallmark=False):
+def create_invoice(*, user, branch, customer, product_ids, payments, discount=0, old_gold_adjustment=0, include_hallmark=False,
+                   old_gold_receipts=()):
     company = user.company
     if not product_ids or len(set(product_ids)) != len(product_ids):
         raise ValidationError("Select at least one unique item")
@@ -57,6 +59,8 @@ def create_invoice(*, user, branch, customer, product_ids, payments, discount=0,
         stone += sv
 
     discount, old_gold = J.q2(discount), J.q2(old_gold_adjustment)
+    for r in old_gold_receipts:
+        old_gold += r.value
     hallmark = J.q2(company.hallmark_charge * len(products)) if include_hallmark else D(0)
     taxable = metal + making + stone + hallmark - discount
     if taxable < 0:
@@ -81,6 +85,29 @@ def create_invoice(*, user, branch, customer, product_ids, payments, discount=0,
         p.save(update_fields=["status", "updated_at"])
         StockMovement.objects.create(company=company, branch=p.branch, product=p, kind="sale", reference=inv.number,
                                      gross_weight=p.gross_weight, fine_weight=p.fine_weight, direction=-1, created_by=user)
+    for r in old_gold_receipts:
+        r.status = "exchanged"
+        r.exchange_invoice = inv
+        r.save(update_fields=["status", "exchange_invoice", "updated_at"])
+    acc.post_sale(inv, user)
+    return inv
+
+
+@transaction.atomic
+def pay_invoice(*, user, invoice, amount, method, reference=""):
+    inv = Invoice.objects.select_for_update().get(pk=invoice.pk)
+    amount = J.q2(amount)
+    if inv.status != "posted":
+        raise ValidationError("Invoice is cancelled")
+    if amount <= 0 or amount > inv.balance:
+        raise ValidationError(f"Amount must be between 0.01 and the balance {inv.balance}")
+    Payment.objects.create(invoice=inv, method=method, amount=amount, reference=reference)
+    inv.paid += amount
+    inv.save(update_fields=["paid", "updated_at"])
+    acc.post(company=inv.company, branch=inv.branch, user=user, kind="receipt", reference=inv.number,
+             narration=f"Receipt against {inv.number}",
+             lines=[(acc.METHOD_ACCOUNT[method], amount, 0),
+                    ("1100", 0, amount, f"customer:{inv.customer_id}" if inv.customer_id else "")])
     return inv
 
 
@@ -96,6 +123,11 @@ def cancel_invoice(*, user, invoice, reason):
         StockMovement.objects.create(company=inv.company, branch=p.branch, product=p, kind="sale_reversal",
                                      reference=inv.number, gross_weight=p.gross_weight, fine_weight=p.fine_weight,
                                      direction=1, created_by=user)
+    for r in inv.old_gold_receipts.all():
+        r.status = "received"
+        r.exchange_invoice = None
+        r.save(update_fields=["status", "exchange_invoice", "updated_at"])
+    acc.reverse_by_reference(inv.company, ["sale", "receipt"], inv.number, user, f"Cancelled {inv.number}")
     inv.status = Invoice.Status.CANCELLED
     inv.cancel_reason = reason
     inv.save(update_fields=["status", "cancel_reason", "updated_at"])

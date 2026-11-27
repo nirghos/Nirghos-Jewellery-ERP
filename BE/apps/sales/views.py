@@ -51,6 +51,7 @@ class InvoiceIn(serializers.Serializer):
     discount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, default=0)
     old_gold_adjustment = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, default=0)
     include_hallmark = serializers.BooleanField(default=False)
+    old_gold_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
 
 
 class InvoiceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -76,23 +77,32 @@ class InvoiceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
             customer = Customer.objects.filter(pk=d["customer"], company_id=request.user.company_id).first()
             if not customer:
                 raise serializers.ValidationError({"customer": "Not found"})
+        from apps.old_gold.models import OldGoldReceipt
+        og = list(OldGoldReceipt.objects.filter(pk__in=d.get("old_gold_ids", []), company_id=request.user.company_id,
+                                                status="received", payout="exchange"))
+        if len(og) != len(d.get("old_gold_ids", [])):
+            raise serializers.ValidationError({"old_gold_ids": "Invalid or already used old gold receipt"})
         branch = request.user.branch
         if branch is None:
             raise serializers.ValidationError("Your user has no branch assigned")
         inv = services.create_invoice(
             user=request.user, branch=branch, customer=customer, product_ids=d["product_ids"],
             payments=d.get("payments", []), discount=d["discount"],
-            old_gold_adjustment=d["old_gold_adjustment"], include_hallmark=d["include_hallmark"])
+            old_gold_adjustment=d["old_gold_adjustment"], include_hallmark=d["include_hallmark"], old_gold_receipts=og)
         return Response(InvoiceSer(inv).data, status=status.HTTP_201_CREATED)
+
+    perm_map = {"cancel": "approve", "pay": "create"}
+
+    @action(detail=True, methods=["post"])
+    def pay(self, request, pk=None):
+        p = PaymentIn(data=request.data)
+        p.is_valid(raise_exception=True)
+        inv = services.pay_invoice(user=request.user, invoice=self.get_object(), amount=p.validated_data["amount"],
+                                   method=p.validated_data["method"], reference=p.validated_data.get("reference", ""))
+        return Response(InvoiceSer(inv).data)
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
-        self.action_name = "approve"
         inv = services.cancel_invoice(user=request.user, invoice=self.get_object(),
                                       reason=request.data.get("reason", "")[:200])
         return Response(InvoiceSer(inv).data)
-
-    def check_permissions(self, request):
-        if getattr(self, "action", None) == "cancel":
-            self.action_name = "approve"
-        super().check_permissions(request)

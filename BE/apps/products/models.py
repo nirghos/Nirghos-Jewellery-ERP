@@ -43,6 +43,7 @@ class Product(TenantScoped):
         RESERVED = "reserved", "Reserved"
         DAMAGED = "damaged", "Damaged"
         IN_TRANSIT = "in_transit", "In transit"
+        VOID = "void", "Void"
 
     name = models.CharField(max_length=200)
     sku = models.CharField(max_length=50)
@@ -93,6 +94,22 @@ class StockMovement(TimeStamped):
     gross_weight = models.DecimalField(max_digits=10, decimal_places=3)
     fine_weight = models.DecimalField(max_digits=10, decimal_places=3)
     direction = models.SmallIntegerField()  # +1 in, -1 out
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class MetalLedger(TimeStamped):
+    """Raw metal (bar/scrap/old gold) stock ledger. Signed weights; append-only."""
+    company = models.ForeignKey("companies.Company", on_delete=models.PROTECT, related_name="+")
+    branch = models.ForeignKey("companies.Branch", on_delete=models.PROTECT, null=True, related_name="+")
+    metal = models.CharField(max_length=20, choices=Metal.choices)
+    purity = models.DecimalField(max_digits=5, decimal_places=3)
+    kind = models.CharField(max_length=20)  # purchase, karigar_issue, karigar_return, old_gold, melting, adjustment
+    reference = models.CharField(max_length=60, blank=True)
+    gross_weight = models.DecimalField(max_digits=12, decimal_places=3)
+    fine_weight = models.DecimalField(max_digits=12, decimal_places=3)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
 
     class Meta:

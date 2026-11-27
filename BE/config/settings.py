@@ -18,7 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "rest_framework", "django_filters", "corsheaders", "drf_spectacular",
     "apps.core", "apps.companies", "apps.accounts", "apps.customers", "apps.suppliers",
-    "apps.products", "apps.sales", "apps.dashboard",
+    "apps.products", "apps.sales", "apps.dashboard", "apps.accounting", "apps.purchases", "apps.old_gold", "apps.karigars", "apps.manufacturing", "apps.repairs", "apps.diamonds", "apps.hallmark", "apps.schemes", "apps.hr", "apps.gst", "apps.reports",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
