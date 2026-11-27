@@ -13,6 +13,14 @@ class ProductSer(serializers.ModelSerializer):
         read_only_fields = ["id", "net_weight", "fine_weight", "status", "created_at", "updated_at"]
 
     def validate(self, a):
+        company_id = self.context["request"].user.company_id
+        for f in ("sku", "barcode"):
+            if f in a:
+                dup = Product.objects.filter(company_id=company_id, **{f: a[f]})
+                if self.instance:
+                    dup = dup.exclude(pk=self.instance.pk)
+                if dup.exists():
+                    raise serializers.ValidationError({f: f"{f.upper()} already exists"})
         g = a.get("gross_weight", getattr(self.instance, "gross_weight", None))
         s = a.get("stone_weight", getattr(self.instance, "stone_weight", 0))
         if g is not None and s > g:
@@ -34,6 +42,14 @@ class CategorySer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ["id", "name"]
+
+    def validate_name(self, v):
+        qs = Category.objects.filter(company_id=self.context["request"].user.company_id, name=v)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Category already exists")
+        return v
 
 
 class RateSer(serializers.ModelSerializer):

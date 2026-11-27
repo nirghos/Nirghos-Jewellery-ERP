@@ -16,6 +16,14 @@ class BranchSer(serializers.ModelSerializer):
         model = Branch
         fields = ["id", "name", "code", "address", "is_active"]
 
+    def validate_code(self, v):
+        qs = Branch.objects.filter(company_id=self.context["request"].user.company_id, code=v)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Branch code already exists")
+        return v
+
 
 class BranchViewSet(viewsets.ModelViewSet):
     module = "company"
