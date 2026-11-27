@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
-import { BarChart3, Boxes, Gem, LogOut, Menu, Moon, Receipt, ScanLine, Settings, Sun, Truck, Users } from "lucide-react";
+import { BadgeCheck, BarChart3, Boxes, Coins, Diamond, Factory, FileText, Gem, Hammer, Landmark, LineChart, LogOut, Menu, Moon, PiggyBank, Receipt, ScanLine, Settings, ShoppingCart, Sun, Truck, UserCog, Users, Wrench } from "lucide-react";
 import { api, tokens } from "@/lib/api";
 
 export type Me = {
@@ -19,8 +19,20 @@ const NAV = [
   { href: "/pos", label: "POS Billing", icon: ScanLine, module: "sales" },
   { href: "/invoices", label: "Invoices", icon: Receipt, module: "sales" },
   { href: "/products", label: "Inventory", icon: Boxes, module: "products" },
+  { href: "/purchases", label: "Purchases", icon: ShoppingCart, module: "purchases" },
   { href: "/customers", label: "Customers", icon: Users, module: "customers" },
   { href: "/suppliers", label: "Suppliers", icon: Truck, module: "suppliers" },
+  { href: "/karigars", label: "Karigars", icon: Hammer, module: "karigars" },
+  { href: "/manufacturing", label: "Manufacturing", icon: Factory, module: "manufacturing" },
+  { href: "/repairs", label: "Repairs & Custom", icon: Wrench, module: "repairs" },
+  { href: "/old-gold", label: "Old Gold", icon: Coins, module: "old_gold" },
+  { href: "/stones", label: "Diamond & Stones", icon: Diamond, module: "diamonds" },
+  { href: "/hallmark", label: "Hallmark & HUID", icon: BadgeCheck, module: "hallmark" },
+  { href: "/schemes", label: "Gold Schemes", icon: PiggyBank, module: "schemes" },
+  { href: "/accounting", label: "Accounting", icon: Landmark, module: "accounting" },
+  { href: "/gst", label: "GST", icon: FileText, module: "gst" },
+  { href: "/hr", label: "HR & Payroll", icon: UserCog, module: "hr" },
+  { href: "/reports", label: "Reports", icon: LineChart, module: "reports" },
   { href: "/settings", label: "Settings", icon: Settings, module: "company" },
 ];
 
@@ -51,7 +63,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <MeCtx.Provider value={me}>
       <div className="min-h-screen lg:flex">
-        <aside className={`${open ? "block" : "hidden"} lg:block lg:w-60 shrink-0 bg-navy text-white p-4 lg:sticky lg:top-0 lg:h-screen`}>
+        <aside className={`${open ? "block" : "hidden"} lg:block lg:w-60 shrink-0 bg-navy text-white p-4 lg:sticky lg:top-0 lg:h-screen overflow-y-auto`}>
           <div className="flex items-center gap-2 text-gold font-bold text-lg mb-6"><Gem size={20} /> NIRGHOS</div>
           <nav className="space-y-1">
             {items.map((n) => (

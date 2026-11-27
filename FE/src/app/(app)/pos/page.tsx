@@ -5,6 +5,7 @@ import { api, money, Page } from "@/lib/api";
 
 type Product = { id: string; name: string; sku: string; net_weight: string; purity: string; metal: string; barcode: string };
 type Customer = { id: string; name: string };
+type OG = { id: string; number: string; value: string; fine_weight: string; payout: string };
 type Invoice = {
   id: string; number: string; metal_total: string; making_total: string; stone_total: string; hallmark_total: string;
   discount: string; taxable_value: string; gst_rate: string; gst_amount: string; grand_total: string; paid: string;
@@ -15,6 +16,8 @@ export default function POS() {
   const [cart, setCart] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customer, setCustomer] = useState("");
+  const [ogs, setOgs] = useState<OG[]>([]);
+  const [ogSel, setOgSel] = useState<string[]>([]);
   const [discount, setDiscount] = useState("0");
   const [method, setMethod] = useState("cash");
   const [amount, setAmount] = useState("");
@@ -24,7 +27,10 @@ export default function POS() {
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { api<Page<Customer>>("/customers/").then((d) => setCustomers(d.results)).catch(() => {}); }, []);
+  useEffect(() => {
+    api<Page<Customer>>("/customers/").then((d) => setCustomers(d.results)).catch(() => {});
+    api<Page<OG>>("/old-gold/?status=received&payout=exchange").then((d) => setOgs(d.results)).catch(() => {});
+  }, [done]);
 
   async function scan(e: React.FormEvent) {
     e.preventDefault();
@@ -58,11 +64,11 @@ export default function POS() {
         method: "POST",
         body: {
           customer: customer || null, product_ids: cart.map((c) => c.id), discount: discount || "0",
-          include_hallmark: hallmark, payments: amount ? [{ method, amount }] : [],
+          include_hallmark: hallmark, old_gold_ids: ogSel, payments: amount ? [{ method, amount }] : [],
         },
       });
       setDone(inv);
-      setCart([]); setAmount(""); setDiscount("0");
+      setCart([]); setAmount(""); setDiscount("0"); setOgSel([]);
       setMsg({ ok: true, text: `Invoice ${inv.number} created` });
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : "Failed" });
@@ -99,6 +105,13 @@ export default function POS() {
         </select>
         <label className="text-sm block">Discount (₹)<input className="input" type="number" min="0" value={discount} onChange={(e) => setDiscount(e.target.value)} /></label>
         <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={hallmark} onChange={(e) => setHallmark(e.target.checked)} /> Add hallmarking charge</label>
+        {ogs.length > 0 && (
+          <div className="text-sm space-y-1"><div className="text-muted">Old gold exchange</div>
+            {ogs.map((o) => (
+              <label key={o.id} className="flex items-center gap-2"><input type="checkbox" checked={ogSel.includes(o.id)} onChange={(e) => setOgSel(e.target.checked ? [...ogSel, o.id] : ogSel.filter((x) => x !== o.id))} />
+                {o.number} · {o.fine_weight} g fine · {money(o.value)}</label>
+            ))}</div>
+        )}
         <div className="flex gap-2">
           <select className="input w-28" value={method} onChange={(e) => setMethod(e.target.value)}>
             {["cash", "upi", "card", "bank"].map((m) => <option key={m}>{m}</option>)}

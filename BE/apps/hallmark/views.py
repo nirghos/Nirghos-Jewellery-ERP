@@ -58,10 +58,14 @@ class RequestViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
         u = request.user
         centre = AHCCentre.objects.filter(pk=request.data.get("centre"), company=u.company).first()
         ids = request.data.get("product_ids") or []
-        if not centre or not ids:
-            raise ValidationError("centre and product_ids are required")
-        prods = list(Product.objects.select_for_update().filter(pk__in=ids, company=u.company, status="available"))
-        if len(prods) != len(set(ids)):
+        skus = request.data.get("skus") or []
+        if isinstance(skus, str):
+            skus = [x.strip() for x in skus.split(",") if x.strip()]
+        if not centre or not (ids or skus):
+            raise ValidationError("centre and product_ids (or skus) are required")
+        flt = {"pk__in": ids} if ids else {"sku__in": skus}
+        prods = list(Product.objects.select_for_update().filter(company=u.company, status="available", **flt))
+        if len(prods) != len(set(ids or skus)):
             raise ValidationError("Some products are missing or not available")
         busy = HallmarkItem.objects.filter(product__in=prods, result="pending").select_related("product")
         if busy.exists():

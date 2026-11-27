@@ -1,7 +1,8 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { api, money, Page } from "@/lib/api";
 import { can, useMe } from "@/components/shell";
+import { ActionModal } from "@/components/ui";
 
 type Inv = {
   id: string; number: string; customer_name: string; status: string; grand_total: string; paid: string; balance: string;
@@ -14,6 +15,7 @@ export default function Invoices() {
   const [q, setQ] = useState("");
   const [err, setErr] = useState("");
   const [open, setOpen] = useState<string | null>(null);
+  const [paying, setPaying] = useState<Inv | null>(null);
 
   const load = useCallback(() => {
     api<Page<Inv>>(`/sales/invoices/?search=${encodeURIComponent(q)}`).then((d) => setRows(d.results)).catch((e) => setErr(e.message));
@@ -37,21 +39,26 @@ export default function Invoices() {
           <tbody>
             {rows.length === 0 && <tr><td colSpan={7} className="px-4 py-6 text-muted">No invoices.</td></tr>}
             {rows.map((i) => (
-              <>
-                <tr key={i.id} className="border-b border-line">
+              <Fragment key={i.id}>
+                <tr className="border-b border-line">
                   <td className="px-4 py-3"><button className="text-gold font-semibold" onClick={() => setOpen(open === i.id ? null : i.id)}>{i.number}</button></td>
                   <td className="px-4 py-3">{i.customer_name || "Walk-in"}</td>
                   <td className="px-4 py-3">{money(i.grand_total)}</td><td className="px-4 py-3">{money(i.paid)}</td><td className="px-4 py-3">{money(i.balance)}</td>
                   <td className="px-4 py-3">{i.status}</td>
-                  <td className="px-4 py-3 text-right">{i.status === "posted" && can(me, "sales", "approve") && <button className="text-red-600" onClick={() => cancel(i)}>Cancel</button>}</td>
+                  <td className="px-4 py-3 text-right space-x-3">
+                    {i.status === "posted" && Number(i.balance) > 0 && can(me, "sales", "create") && <button className="text-gold font-semibold" onClick={() => setPaying(i)}>Receive payment</button>}
+                    {i.status === "posted" && can(me, "sales", "approve") && <button className="text-red-600" onClick={() => cancel(i)}>Cancel</button>}</td>
                 </tr>
-                {open === i.id && <tr key={i.id + "d"}><td colSpan={7} className="px-4 py-3 bg-bg text-muted">
+                {open === i.id && <tr><td colSpan={7} className="px-4 py-3 bg-bg text-muted">
                   {i.items.map((x) => <div key={x.sku}>{x.sku} · {x.product_name} · {x.net_weight} g · {money(x.line_total)}</div>)}</td></tr>}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
       </div>
+      {paying && <ActionModal title={`Receive payment - ${paying.number}`} endpoint={`/sales/invoices/${paying.id}/pay/`} intro={`Balance due: ${money(paying.balance)}`}
+        fields={[{ name: "amount", label: "Amount (₹)", type: "number", step: "0.01", required: true, default: paying.balance }, { name: "method", label: "Method", type: "select", required: true, default: "cash", options: ["cash", "upi", "card", "bank"].map((m) => ({ value: m, label: m })) }, { name: "reference", label: "Reference" }]}
+        onClose={() => setPaying(null)} onDone={() => { setPaying(null); load(); }} />}
     </div>
   );
 }
