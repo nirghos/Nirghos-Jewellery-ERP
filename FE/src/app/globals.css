@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --navy: #0f1b3d;
+  --gold: #c9a45c;
+  --bg: #f7f4ec;
+  --card: #ffffff;
+  --text: #2b2f3a;
+  --muted: #6b7280;
+  --line: #e5e1d6;
+}
+.dark {
+  --bg: #0b1226;
+  --card: #131c38;
+  --text: #e8e6df;
+  --muted: #9aa3b8;
+  --line: #24305a;
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-gold: var(--gold);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+.input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+.input:focus { outline: 2px solid var(--gold); outline-offset: -1px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--navy); color: #fff; border-radius: 10px;
+  padding: 0.5rem 0.9rem; font-size: 0.875rem; font-weight: 600;
+}
+.dark .btn { background: var(--gold); color: #0f1b3d; }
+.btn:disabled { opacity: 0.5; }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+.dark .btn-ghost { background: transparent; color: var(--text); }
