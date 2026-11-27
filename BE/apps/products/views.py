@@ -7,6 +7,8 @@ from .models import Category, MetalRate, Product, StockMovement
 
 
 class ProductSer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source="category.name", read_only=True, default="")
+
     class Meta:
         model = Product
         exclude = ["company", "created_by"]

@@ -3,31 +3,45 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --navy: #0f1b3d;
+  --navy: #101b35;
+  --navy-2: #182746;
   --gold: #c9a45c;
-  --bg: #f7f4ec;
+  --gold-light: #e8d7b1;
+  --bg: #f7f6f2;
   --card: #ffffff;
-  --text: #2b2f3a;
-  --muted: #6b7280;
-  --line: #e5e1d6;
+  --text: #202938;
+  --muted: #788292;
+  --line: #e9e7e1;
+  --success: #23865b;
+  --warning: #d99b35;
+  --danger: #d9534f;
+  --soft: #faf8f2;
 }
 .dark {
-  --bg: #0b1226;
-  --card: #131c38;
-  --text: #e8e6df;
-  --muted: #9aa3b8;
-  --line: #24305a;
+  --bg: #0a1124;
+  --card: #121b36;
+  --text: #ebe9e2;
+  --muted: #98a2b8;
+  --line: #243059;
+  --soft: #16213f;
 }
 
 @theme inline {
   --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
   --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
   --color-bg: var(--bg);
   --color-card: var(--card);
   --color-ink: var(--text);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
   --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-playfair), Georgia, serif;
 }
 
 body {
@@ -35,28 +49,62 @@ body {
   color: var(--text);
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+@layer components {
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgb(16 27 53 / 0.04), 0 4px 14px rgb(16 27 53 / 0.04);
+  }
+  .input {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  .input:focus { outline: 2px solid var(--gold); outline-offset: -1px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    background: var(--navy); color: #fff; border-radius: 10px;
+    padding: 0.5rem 0.95rem; font-size: 0.875rem; font-weight: 600;
+    transition: filter 0.15s, background 0.15s;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .dark .btn { background: var(--gold); color: #101b35; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-gold { background: var(--gold); color: #101b35; }
+  .dark .btn-gold { background: var(--gold); color: #101b35; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--soft); filter: none; }
+  .dark .btn-ghost { background: transparent; color: var(--text); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.3rem; border-radius: 999px;
+    padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600; text-transform: capitalize;
+  }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+  .badge-success { color: var(--success); background: color-mix(in srgb, var(--success) 12%, transparent); }
+  .badge-warning { color: #b87c1c; background: color-mix(in srgb, var(--warning) 16%, transparent); }
+  .badge-danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .badge-info { color: #3b6db3; background: color-mix(in srgb, #3b6db3 12%, transparent); }
+  .badge-neutral { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+
+  .skeleton {
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--line) 25%, var(--soft) 50%, var(--line) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  .th { color: var(--muted); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .gold-text { background: linear-gradient(180deg, #f3e3b3, #c9a45c 60%, #9a7b32); -webkit-background-clip: text; background-clip: text; color: transparent; }
 }
-.input {
-  width: 100%;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+@media print {
+  aside, header, .no-print { display: none !important; }
+  main { padding: 0 !important; }
 }
-.input:focus { outline: 2px solid var(--gold); outline-offset: -1px; }
-.btn {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  background: var(--navy); color: #fff; border-radius: 10px;
-  padding: 0.5rem 0.9rem; font-size: 0.875rem; font-weight: 600;
-}
-.dark .btn { background: var(--gold); color: #0f1b3d; }
-.btn:disabled { opacity: 0.5; }
-.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
-.dark .btn-ghost { background: transparent; color: var(--text); }

@@ -34,7 +34,7 @@ export function Tabs({ tabs }: { tabs: { label: string; content: React.ReactNode
       <div className="flex gap-1 overflow-x-auto border-b border-line">
         {tabs.map((t, k) => (
           <button key={t.label} onClick={() => setI(k)}
-            className={`px-4 py-2 text-sm whitespace-nowrap border-b-2 -mb-px ${k === i ? "border-gold font-semibold" : "border-transparent text-muted"}`}>{t.label}</button>
+            className={`px-4 py-2.5 text-sm whitespace-nowrap border-b-2 -mb-px transition ${k === i ? "border-gold font-semibold text-ink" : "border-transparent text-muted hover:text-ink"}`}>{t.label}</button>
         ))}
       </div>
       <div key={i}>{tabs[i].content}</div>
@@ -151,12 +151,12 @@ export function DataTable({ columns, rows, money: moneyCols = [] }: { columns: s
   return (
     <div className="card overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="text-left text-muted border-b border-line"><tr>{columns.map((c) => <th key={c} className="px-4 py-3 font-medium whitespace-nowrap">{c}</th>)}</tr></thead>
+        <thead className="text-left border-b border-line bg-soft"><tr>{columns.map((c) => <th key={c} className="px-4 py-3 th whitespace-nowrap">{c}</th>)}</tr></thead>
         <tbody>
           {rows.length === 0 && <tr><td colSpan={columns.length} className="px-4 py-6 text-muted">No data.</td></tr>}
           {rows.map((r, i) => (
             <tr key={i} className="border-b border-line last:border-0">
-              {r.map((c, j) => <td key={j} className={`px-4 py-2.5 whitespace-nowrap ${isNum(c) ? "tabular-nums" : ""}`}>{moneyCols.includes(j) ? money(c as string) : fmt(c)}</td>)}
+              {r.map((c, j) => <td key={j} className={`px-4 py-2.5 whitespace-nowrap ${isNum(c) ? "tabular-nums" : ""}`}>{moneyCols.includes(j) ? money(c as string) : isStatusCol(columns[j]) && typeof c === "string" && c ? <Badge value={c} /> : fmt(c)}</td>)}
             </tr>
           ))}
         </tbody>
@@ -192,9 +192,46 @@ export async function downloadCsv(path: string, name: string) {
 }
 
 export function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
-  return <div className="card p-4"><div className="text-sm text-muted">{label}</div><div className="text-2xl font-bold mt-1">{value}</div>{sub && <div className="text-xs text-muted">{sub}</div>}</div>;
+  return <div className="card p-4"><div className="text-sm text-muted">{label}</div><div className="text-2xl font-semibold mt-1">{value}</div>{sub && <div className="text-xs text-muted">{sub}</div>}</div>;
 }
 
 export function Err({ children }: { children: React.ReactNode }) {
   return children ? <div className="card p-3 text-sm text-red-600">{children}</div> : null;
+}
+
+const TONES: Record<string, string> = {
+  success: "available posted paid active approved delivered closed completed pass passed matured redeemed yes balanced received ready",
+  warning: "pending open in_progress dispatched created generated estimated issued planned inspection quality_check partial reserved stage casting melting filing polishing finishing cutting stone_setting",
+  danger: "cancelled failed fail absent rejected damaged void reversed no refunded",
+  info: "sold exchanged melted set reversal repair custom",
+};
+export function tone(v: string) {
+  const k = v.toLowerCase().replace(/ /g, "_");
+  for (const [t, words] of Object.entries(TONES)) if (words.split(" ").includes(k)) return t;
+  return "neutral";
+}
+export function Badge({ children, value }: { children?: React.ReactNode; value: string }) {
+  return <span className={`badge badge-${tone(value)}`}>{children ?? value.replace(/_/g, " ")}</span>;
+}
+export const isStatusCol = (label: string) => /^(status|active|stage|result|type)$/i.test(label.trim());
+
+export function Skeleton({ rows = 6, cols = 5 }: { rows?: number; cols?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <tr key={i} className="border-b border-line last:border-0">
+          {Array.from({ length: cols }).map((__, j) => <td key={j} className="px-4 py-3.5"><div className="skeleton h-4" style={{ width: `${55 + ((i * 7 + j * 13) % 40)}%` }} /></td>)}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+export function PageHeader({ title, subtitle, children }: { title: string; subtitle?: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-end gap-3">
+      <div className="flex-1 min-w-0"><h1 className="text-2xl font-semibold tracking-tight">{title}</h1>{subtitle && <p className="text-sm text-muted mt-0.5">{subtitle}</p>}</div>
+      {children}
+    </div>
+  );
 }

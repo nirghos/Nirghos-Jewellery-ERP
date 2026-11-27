@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { api, money } from "@/lib/api";
 import { CrudPage } from "@/components/crud";
@@ -97,6 +97,7 @@ function Ledger() {
 export default function Purchases() {
   const me = useMe();
   const [form, setForm] = useState(false);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("new") === "1" && can(me, "purchases", "create")) setForm(true); }, [me]);
   const [pay, setPay] = useState(false);
   const [n, setN] = useState(0);
   const payFields: Field[] = [

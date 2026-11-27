@@ -71,3 +71,7 @@ export async function api<T = unknown>(path: string, opts: { method?: string; bo
 export type Page<T> = { count: number; results: T[] };
 export const money = (v: string | number | null | undefined) =>
   "₹" + Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const moneyInt = (v: string | number | null | undefined) =>
+  "₹" + Math.round(Number(v || 0)).toLocaleString("en-IN");
+export const compact = (v: number) =>
+  v >= 1e7 ? `${(v / 1e7).toFixed(2)} Cr` : v >= 1e5 ? `${(v / 1e5).toFixed(2)} L` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}k` : String(Math.round(v));

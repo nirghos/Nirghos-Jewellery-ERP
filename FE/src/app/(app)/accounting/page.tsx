@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { money } from "@/lib/api";
 import { CrudPage } from "@/components/crud";
 import { can, useMe } from "@/components/shell";
@@ -65,6 +65,7 @@ function Daybook() {
 export default function Accounting() {
   const me = useMe();
   const [v, setV] = useState(false);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("new") === "1" && can(me, "accounting", "create")) setV(true); }, [me]);
   const [n, setN] = useState(0);
   const acct = { endpoint: "/accounting/accounts/", label: (a: { code: string; name: string }) => `${a.code} · ${a.name}` };
   return (
